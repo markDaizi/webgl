@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高斯模糊</title>
+  <style>
+    /* @import url("https://webglfundamentals.org/webgl/resources/webgl-tutorials.css"); */
+    body {
+      margin: 0;
+    }
+
+    #ui {
+      width: 200px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" width="1280" height="720"></canvas>
+  <div id="uiContainer">
+    <div id="ui">
+      <div id="x"></div>
+      <div id="y"></div>
+      <div id="rotation"></div>
+      <div id="scaleX"></div>
+      <div id="scaleY"></div>
+    </div>
+  </div>
+  <script id="vertex-shader-2d" type="x-shader/x-vertex">
+    attribute vec4 a_Position;
+    attribute vec2 a_TexCoord;
+
+    varying vec2 v_TexCoord;
+
+    void main(){
+        gl_Position = a_Position;
+        v_TexCoord = a_TexCoord;
+    }
+  </script>
+  <script id="fragment-shader-2d" type="x-shader/x-fragment">
+    precision highp float;
+
+    uniform sampler2D u_ColorSampler;
+
+    uniform float imageWidth;
+    uniform float imageHeight;
+    uniform float focal;
+
+    varying vec2 v_TexCoord;
+
+    vec4 blurLine(float diameter,sampler2D sampler,float width,float height){
+      const float PI = 3.14159265;
+      const int maxBlur = 7;
+      float sita = 0.0;
+      int center = 0;
+      if(diameter==0.0){
+        sita = pow(0.1, 2.0);
+        center = 0
+      }else if(diameter<0.5){
+        sita = pow(0.1 + diameter * 2 / 0.5, 2.0);
+        center = 1;
+      }else if(diameter<0.8){
+        sita = pow(0.5 + 4 / 0.3 * (x - 0.5), 2.0);
+        center = 2;
+      }else{
+        sita = pow(0.1 + diameter * 2 / 0.5, 2.0);
+        center = 3;
+      }
+  
+      float sum = 0.0;
+      vec4 sumVec4 = vec4(0.0);
+      float radio = sqrt(0.5 / PI / sita);
+      float sum = 0.0;
+      vec4 sumVec4 = vec4(0.0);
+
+        for(int i = 0; i < maxBlur; i++) if(i<center + 1){
+
+            float weight =  radio * exp(-pow(float(i), 2.0) / sita / 2.0);
+
+            float ii = float(i);
+
+            if(i == 0){
+                vec4 color = texture2D(sampler, v_TexCoord);
+                sumVec4 += color * weight;
+                sum += weight;
+            }else{
+                vec4 left = texture2D(sampler, vec2( v_TexCoord.x - ii/width, v_TexCoord.y));
+                vec4 right = texture2D(sampler, vec2( v_TexCoord.x + ii/width, v_TexCoord.y));
+                sumVec4 += left * weight;
+                sumVec4 += right * weight;
+                sum += 2.0 * weight;
+            }
+
+        }
+        return vec4(sumVec4.r/sum, sumVec4.g/sum, sumVec4.b/sum, sumVec4.a/sum);
+    }
+
+    void main(){
+
+      gl_FragColor = blurLine(float(focal/100), u_ColorSampler, imageWidth, imageHeight);
+
+    }
+  </script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-1.7.1.min.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-ui-1.8.16.custom.min.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery.mousecapture.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery.gman.ui.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-gman-circle.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
+  <script src="./index.js"></script>
+</body>
+
+</html>

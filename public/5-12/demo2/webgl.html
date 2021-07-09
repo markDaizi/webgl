@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script id="vertex-shader-2d"  type="notjs">
+    attribute vec4 a_positon
+    uniform vec2 u_resolution
+    void main(){
+      vec2 zeroOne = a_position / u_resolution
+      vec2 zeroToTwo = zeroOne * 2
+      vec2 clipSpace = zeroToTwo - 1.0
+      gl_Position = vec4(clipSpace, 0, 1)
+    }
+  </script>
+  <script type='notjs' id="fragment-shader-2d">
+    precision mediump float
+    void main(){
+      gl_FragColor = vec4(1, 0, 0.5, 1)
+    }
+  </script>
+  <script src="../../webgl-utils.js"></script>
+  <script src="./index.js"></script>
+</body>
+</html>

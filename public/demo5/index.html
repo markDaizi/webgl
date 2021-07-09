@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGL 进一步处理图像</title>
+  <style>
+    @import url("https://webglfundamentals.org/webgl/resources/webgl-tutorials.css");
+
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    #ui {
+      font-size: x-small;
+    }
+
+    table {
+      border-collapse: collapse;
+      pointer-events: auto;
+    }
+
+    .tDnD_whileDrag {
+      background-color: #daf !important;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #eee;
+    }
+
+    tr:nth-child(even) {
+      background-color: #def;
+    }
+
+    td {
+      border-width: 0px;
+      padding: 0px;
+      margin: 0px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="uiContainer">
+    <div id="ui">
+      <div id="x"></div>
+      <div id="y"></div>
+      <div id="rotation"></div>
+      <div id="scaleX"></div>
+      <div id="scaleY"></div>
+    </div>
+  </div>
+  <!-- vertex shader -->
+  <script id="vertex-shader-2d" type="x-shader/x-vertex">
+    attribute vec2 a_position;
+    attribute vec2 a_texCoord;
+
+    uniform vec2 u_resolution;
+    uniform float u_flipY;
+
+    varying vec2 v_texCoord;
+
+    void main() {
+      // convert the rectangle from pixels to 0.0 to 1.0
+      vec2 zeroToOne = a_position / u_resolution;
+
+      // convert from 0->1 to 0->2
+      vec2 zeroToTwo = zeroToOne * 2.0;
+
+      // convert from 0->2 to -1->+1 (clipspace)
+      vec2 clipSpace = zeroToTwo - 1.0;
+
+      gl_Position = vec4(clipSpace * vec2(1, u_flipY), 0, 1);
+
+      // pass the texCoord to the fragment shader
+      // The GPU will interpolate this value between points.
+      v_texCoord = a_texCoord;
+    }
+</script>
+  <!-- fragment shader -->
+  <script id="fragment-shader-2d" type="x-shader/x-fragment">
+    precision highp float;
+
+// our texture
+uniform sampler2D u_image;
+uniform vec2 u_textureSize;
+uniform int coreSize;
+uniform float width;
+uniform float height;
+uniform float u_kernel[49];
+uniform float u_kernelWeight;
+
+// the texCoords passed in from the vertex shader.
+varying vec2 v_texCoord;
+vec4 blur(int diameter,sampler2D sampler,float width,float height){ 
+  const float PI = 3.14159265; 
+   const int maxBlur = 100;
+   if(mod(float(diameter), 2.0) == 0.0){ diameter++; } 
+   if(diameter > maxBlur){ diameter = maxBlur; } 
+   // 中心点 
+   int center = (diameter - 1) / 2; 
+   // σ的平方 
+   float sita = pow(float(diameter) / 6.0, 2.0); 
+   float sum = 0.0; vec4 sumVec4 = vec4(0.0);
+    for(int i = 0; i < maxBlur; i++) {
+      if(i<diameter){ 
+        for(int j = 0; j < maxBlur; j++){
+          if(j<diameter){ 
+            // 遍历周围像素点
+            float x = float(i-center); float y = float(j-center);
+            // 计算权重 
+            float weight = 0.5 / PI / sita * exp(-(pow(x, 2.0) + pow(y, 2.0)) / sita / 2.0);
+              // 总权重
+            sum += weight;
+              // 获取像素点
+            vec4 v = texture2D(sampler, vec2( u_textureSize.x + x/width, u_textureSize.y + y/height )); 
+            sumVec4 += v * weight; 
+          } 
+        }
+      } 
+    }         
+    // 加总取平均
+    return vec4(sumVec4.r/sum, sumVec4.g/sum, sumVec4.b/sum, sumVec4.a/sum); 
+  }
+
+void main() {
+   vec4 color = blur(coreSize,u_image,width,height);
+   gl_FragColor = color;
+}
+</script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-1.7.1.min.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-ui-1.8.16.custom.min.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery.mousecapture.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery.gman.ui.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-gman-circle.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
+  <script src="./index.js"></script>
+</body>
+
+</html>
+<!-- texture2D(u_image, v_texCoord + onePixel * vec2(-1, -1)) * u_kernel[0] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 0, -1)) * u_kernel[1] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 1, -1)) * u_kernel[2] +
+       texture2D(u_image, v_texCoord + onePixel * vec2(-1,  0)) * u_kernel[3] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 0,  0)) * u_kernel[4] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 1,  0)) * u_kernel[5] +
+       texture2D(u_image, v_texCoord + onePixel * vec2(-1,  1)) * u_kernel[6] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 0,  1)) * u_kernel[7] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 1,  1)) * u_kernel[8] ; -->

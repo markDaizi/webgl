@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>六个三角形组成的 ‘F’</title>
+  <style>
+    @import url("https://webglfundamentals.org/webgl/resources/webgl-tutorials.css");
+
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    #ui {
+      width: 200px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="uiContainer">
+    <div id="ui">
+      <div id="x"></div>
+      <div id="y"></div>
+      <div id="rotation"></div>
+      <div id="scaleX"></div>
+      <div id="scaleY"></div>
+    </div>
+  </div>
+  <script id="vertex-shader-2d" type="x-shader/x-vertex">
+    attribute vec2 a_position;
+    
+    uniform vec2 u_resolution;
+    uniform vec2 u_translation;
+    uniform vec2 u_rotation;
+    uniform vec2 u_scale;
+
+    void main() {
+      vec2 scaledPosition = a_position * u_scale;
+      vec2 rotatedPosition = vec2(
+        scaledPosition.x * u_rotation.y + scaledPosition.y * u_rotation.x,
+        scaledPosition.y * u_rotation.y - scaledPosition.x * u_rotation.x);
+       // 加上平移量
+       vec2 position = rotatedPosition + u_translation;
+    
+       // 从像素坐标转换到 0.0 到 1.0
+       vec2 zeroToOne = position / u_resolution;
+    
+       // convert from 0->1 to 0->2
+       vec2 zeroToTwo = zeroToOne * 2.0;
+    
+       // convert from 0->2 to -1->+1 (clipspace)
+       vec2 clipSpace = zeroToTwo - 1.0;
+    
+       gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    }
+  </script>
+  <script id="fragment-shader-2d" type="x-shader/x-fragment">
+    precision mediump float;
+    
+    uniform vec4 u_color;
+    
+    void main() {
+       gl_FragColor = u_color;
+    }
+  </script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-1.7.1.min.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-ui-1.8.16.custom.min.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery.mousecapture.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery.gman.ui.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-gman-circle.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
+  <script src="./index.js"></script>
+</body>
+
+</html>

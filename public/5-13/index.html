@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGL 进一步处理图像</title>
+  <style>
+    @import url("https://webglfundamentals.org/webgl/resources/webgl-tutorials.css");
+
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    #ui {
+      font-size: x-small;
+    }
+
+    table {
+      border-collapse: collapse;
+      pointer-events: auto;
+    }
+
+    .tDnD_whileDrag {
+      background-color: #daf !important;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #eee;
+    }
+
+    tr:nth-child(even) {
+      background-color: #def;
+    }
+
+    td {
+      border-width: 0px;
+      padding: 0px;
+      margin: 0px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="uiContainer">
+    <div id="ui"></div>
+  </div>
+  <!-- vertex shader -->
+  <script id="vertex-shader-2d" type="x-shader/x-vertex">
+    varying highp vec2 vTexCoord;
+    uniform sampler2D sTexture;
+    uniform highp float widthOfset;
+    uniform highp float heightOfset;
+    uniform highp float gaussianWeights[961];
+    uniform highp int blurRadius;
+    void main() {
+        if(blurRadius == 0){
+            gl_FragColor = texture2D(sTexture,vTexCoord);
+        }else{
+            highp vec2 offset = vec2(widthOfset,heightOfset);
+            highp vec4 sum = vec4(0.0);
+            highp int x = 0;
+            for (int i = -blurRadius; i <= blurRadius; i++) {
+                for (int j = -blurRadius; j <= blurRadius; j++) {
+                    highp float weight = gaussianWeights[x];
+                    sum += (texture2D(sTexture, vTexCoord+offset*vec2(i,j))*weight);
+                    x++;
+                }
+            }
+            gl_FragColor = sum;
+        }
+    }
+</script>
+  <!-- fragment shader -->
+  <script id="fragment-shader-2d" type="x-shader/x-fragment">
+    attribute vec4 aPosition;
+    attribute vec2 aTexCoord;
+    varying vec2 vTexCoord;
+    void main() {
+        vTexCoord = vec2(aTexCoord.x,1.0 - aTexCoord.y);
+        gl_Position = aPosition;
+    }
+  </script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery-1.7.1.min.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/jquery.tablednd_0_5.js"></script>
+  <!--
+for most samples webgl-utils only provides shader compiling/linking and
+canvas resizing because why clutter the examples with code that's the same in every sample.
+See https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
+and https://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
+for webgl-utils, m3, m4, and webgl-lessons-ui.
+-->
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+  <script src="./webgl.js"></script>
+</body>
+
+</html>
